@@ -12,19 +12,23 @@ async function startCall() {
         peerConnection = new RTCPeerConnection(configuration);
         localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
         
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
         peerConnection.onicecandidate = event => {
             if (event.candidate) {
+                const callInfo = {
+                    offer: peerConnection.localDescription,
+                    candidate: event.candidate
+                };
                 document.getElementById('status').textContent = 
-                    `Your join code: ${btoa(JSON.stringify(event.candidate))}`;
+                    `Your join code: ${btoa(JSON.stringify(callInfo))}`;
             }
         };
 
         peerConnection.ontrack = event => {
             document.getElementById('remoteVideo').srcObject = event.streams[0];
         };
-
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
         
     } catch (err) {
         console.error(err);
@@ -35,7 +39,7 @@ async function startCall() {
 async function joinCall() {
     try {
         const joinCode = document.getElementById('joinCode').value;
-        const candidate = JSON.parse(atob(joinCode));
+        const { offer, candidate } = JSON.parse(atob(joinCode));
         
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = localStream;
@@ -47,9 +51,10 @@ async function joinCall() {
             document.getElementById('remoteVideo').srcObject = event.streams[0];
         };
 
-        await peerConnection.addIceCandidate(candidate);
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         
     } catch (err) {
         console.error(err);
