@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Video Call</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>WebRTC Video Call</h1>
+    <div id="videos">
+        <video id="localVideo" autoplay playsinline muted></video>
+        <video id="remoteVideo" autoplay playsinline></video>
+    </div>
+    <div class="controls">
+        <button id="startCall">Start Call</button>
+        <input type="text" id="joinCode" placeholder="Enter join code">
+        <button id="joinCall">Join Call</button>
+    </div>
+    <div id="status"></div>
+    <script src="script.js"></script>
+</body>
+</html>
