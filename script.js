@@ -11,14 +11,6 @@ const configuration = {
 document.getElementById('startButton').addEventListener('click', startCall);
 document.getElementById('joinButton').addEventListener('click', showJoinInput);
 
-function showJoinInput() {
-    document.getElementById('callInfo').style.display = 'block';
-    document.getElementById('startButton').style.display = 'none';
-    document.getElementById('joinButton').textContent = 'Connect';
-    document.getElementById('joinButton').removeEventListener('click', showJoinInput);
-    document.getElementById('joinButton').addEventListener('click', joinCall);
-}
-
 async function startCall() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -31,8 +23,20 @@ async function startCall() {
         document.getElementById('joinButton').style.display = 'none';
         
         setupPeerConnection();
+        createOffer();
     } catch (err) {
         console.error('Error starting call:', err);
+    }
+}
+
+async function createOffer() {
+    try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        // Here you would send this offer to the other peer via your signaling server
+        console.log('Offer created:', offer);
+    } catch (err) {
+        console.error('Error creating offer:', err);
     }
 }
 
@@ -49,15 +53,28 @@ async function joinCall() {
         document.getElementById('localVideo').srcObject = localStream;
         
         setupPeerConnection();
-        console.log('Joining call with code:', codeToJoin);
+        createAnswer();
         
-        // Visual feedback that join was successful
         document.getElementById('joinCode').style.borderColor = 'green';
         document.getElementById('joinButton').textContent = 'Connected';
         document.getElementById('joinButton').disabled = true;
-        
     } catch (err) {
         console.error('Error joining call:', err);
+    }
+}
+
+async function createAnswer() {
+    try {
+        // Here you would receive the offer from the other peer via your signaling server
+        // const offer = // received offer
+        // await peerConnection.setRemoteDescription(offer);
+        
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        // Here you would send this answer back to the other peer via your signaling server
+        console.log('Answer created:', answer);
+    } catch (err) {
+        console.error('Error creating answer:', err);
     }
 }
 
@@ -69,13 +86,31 @@ function setupPeerConnection() {
     });
     
     peerConnection.ontrack = event => {
-        document.getElementById('remoteVideo').srcObject = event.streams[0];
+        if (event.streams && event.streams[0]) {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+        }
     };
     
     peerConnection.onicecandidate = event => {
         if (event.candidate) {
-            // Send candidate to remote peer
+            // Send this candidate to the remote peer via signaling server
             console.log('New ICE candidate:', event.candidate);
         }
     };
+
+    peerConnection.oniceconnectionstatechange = () => {
+        console.log('ICE Connection State:', peerConnection.iceConnectionState);
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+        console.log('Connection State:', peerConnection.connectionState);
+    };
+}
+
+function showJoinInput() {
+    document.getElementById('callInfo').style.display = 'block';
+    document.getElementById('startButton').style.display = 'none';
+    document.getElementById('joinButton').textContent = 'Connect';
+    document.getElementById('joinButton').removeEventListener('click', showJoinInput);
+    document.getElementById('joinButton').addEventListener('click', joinCall);
 }
