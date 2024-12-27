@@ -1,5 +1,6 @@
 let peerConnection;
 let localStream;
+let iceCandidates = [];
 const configuration = { 
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] 
 };
@@ -17,9 +18,10 @@ async function startCall() {
 
         peerConnection.onicecandidate = event => {
             if (event.candidate) {
+                iceCandidates.push(event.candidate);
                 const callInfo = {
-                    offer: peerConnection.localDescription,
-                    candidate: event.candidate
+                    sdp: peerConnection.localDescription,
+                    candidates: iceCandidates
                 };
                 document.getElementById('status').textContent = 
                     `Your join code: ${btoa(JSON.stringify(callInfo))}`;
@@ -39,7 +41,7 @@ async function startCall() {
 async function joinCall() {
     try {
         const joinCode = document.getElementById('joinCode').value;
-        const { offer, candidate } = JSON.parse(atob(joinCode));
+        const { sdp, candidates } = JSON.parse(atob(joinCode));
         
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = localStream;
@@ -51,10 +53,13 @@ async function joinCall() {
             document.getElementById('remoteVideo').srcObject = event.streams[0];
         };
 
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        
+        for (const candidate of candidates) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        }
         
     } catch (err) {
         console.error(err);
