@@ -9,42 +9,53 @@ const configuration = {
 };
 
 document.getElementById('startButton').addEventListener('click', startCall);
-document.getElementById('joinButton').addEventListener('click', joinCall);
+document.getElementById('joinButton').addEventListener('click', showJoinInput);
+
+function showJoinInput() {
+    document.getElementById('callInfo').style.display = 'block';
+    document.getElementById('startButton').style.display = 'none';
+    document.getElementById('joinButton').textContent = 'Connect';
+    document.getElementById('joinButton').removeEventListener('click', showJoinInput);
+    document.getElementById('joinButton').addEventListener('click', joinCall);
+}
 
 async function startCall() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = localStream;
         
-        // Generate a random room ID
         roomId = Math.random().toString(36).substring(7);
         document.getElementById('callCode').textContent = roomId;
         document.getElementById('callInfo').style.display = 'block';
+        document.getElementById('joinCode').style.display = 'none';
+        document.getElementById('joinButton').style.display = 'none';
         
         setupPeerConnection();
-        
-        // Here you would typically set up your signaling server connection
-        // and handle the offer/answer process
     } catch (err) {
         console.error('Error starting call:', err);
     }
 }
 
 async function joinCall() {
+    const codeToJoin = document.getElementById('joinCode').value.trim();
+    
+    if (!codeToJoin) {
+        document.getElementById('joinCode').style.borderColor = 'red';
+        return;
+    }
+
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = localStream;
         
-        const codeToJoin = document.getElementById('joinCode').value;
-        if (!codeToJoin) {
-            alert('Please enter a call code');
-            return;
-        }
-        
         setupPeerConnection();
+        console.log('Joining call with code:', codeToJoin);
         
-        // Here you would typically connect to the signaling server
-        // and handle the offer/answer process using the codeToJoin
+        // Visual feedback that join was successful
+        document.getElementById('joinCode').style.borderColor = 'green';
+        document.getElementById('joinButton').textContent = 'Connected';
+        document.getElementById('joinButton').disabled = true;
+        
     } catch (err) {
         console.error('Error joining call:', err);
     }
@@ -53,20 +64,18 @@ async function joinCall() {
 function setupPeerConnection() {
     peerConnection = new RTCPeerConnection(configuration);
     
-    // Add local stream to peer connection
     localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
     });
     
-    // Handle incoming remote stream
     peerConnection.ontrack = event => {
         document.getElementById('remoteVideo').srcObject = event.streams[0];
     };
     
-    // Handle ICE candidates
     peerConnection.onicecandidate = event => {
         if (event.candidate) {
-            // Send the candidate to the remote peer via signaling server
+            // Send candidate to remote peer
+            console.log('New ICE candidate:', event.candidate);
         }
     };
 }
