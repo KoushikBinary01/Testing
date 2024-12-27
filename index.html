@@ -2,20 +2,24 @@
 <html>
 <head>
     <title>WebRTC Video Call</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>WebRTC Video Call</h1>
-    <div id="videos">
-        <video id="localVideo" autoplay playsinline muted></video>
-        <video id="remoteVideo" autoplay playsinline></video>
+    <div class="container">
+        <h1>Video Call App</h1>
+        <div class="button-container">
+            <button id="startButton">Start Call</button>
+            <button id="joinButton">Join Call</button>
+        </div>
+        <div id="callInfo" style="display: none;">
+            <p>Your Call Code: <span id="callCode"></span></p>
+            <input type="text" id="joinCode" placeholder="Enter call code to join">
+        </div>
+        <div class="video-container">
+            <video id="localVideo" autoplay playsinline></video>
+            <video id="remoteVideo" autoplay playsinline></video>
+        </div>
     </div>
-    <div class="controls">
-        <button id="startCall">Start Call</button>
-        <input type="text" id="joinCode" placeholder="Enter join code">
-        <button id="joinCall">Join Call</button>
-    </div>
-    <div id="status"></div>
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
